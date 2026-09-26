@@ -28,11 +28,16 @@ class MeiroPlatformInfo {
   bool _adIdResolved = false;
 
   /// Warms platform metadata caches.
-  Future<void> warm(MeiroConfiguration configuration) async {
+  Future<void> warm(
+    MeiroConfiguration configuration, {
+    bool includeAdvertisingId = true,
+  }) async {
     await Future.wait([
       _resolvePackageInfo(),
       _resolveDeviceInfo(),
-      if (configuration.automaticTrackingOptions.adIdTracking) resolveAdId(),
+      if (includeAdvertisingId &&
+          configuration.automaticTrackingOptions.adIdTracking)
+        resolveAdId(),
     ]);
   }
 
@@ -43,8 +48,8 @@ class MeiroPlatformInfo {
       id: configuration.appId,
       name: packageInfo?.appName,
       version: packageInfo?.version,
-      language:
-          configuration.language ?? PlatformDispatcher.instance.locale.languageCode,
+      language: configuration.language ??
+          PlatformDispatcher.instance.locale.languageCode,
       adId: _adId,
     );
   }

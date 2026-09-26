@@ -115,6 +115,46 @@ When `pushEnabled` is true:
 
 The SDK does not request notification permissions. Your app must request permissions on Android 13+ and iOS.
 
+### Background and closed-app notifications
+
+Register a Firebase background callback before `runApp`. Initialize Firebase
+there and pass the same Meiro configuration used by your foreground app:
+
+```dart
+@pragma('vm:entry-point')
+Future<void> firebaseBackgroundMessage(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  await MeiroSdk.handleBackgroundMessage(
+    message,
+    configuration: meiroConfiguration,
+  );
+}
+
+// In main(), after Firebase.initializeApp() and before runApp():
+FirebaseMessaging.onBackgroundMessage(firebaseBackgroundMessage);
+```
+
+Import `firebase_core` and `firebase_messaging` in the app. Define
+`meiroConfiguration` as a top-level constant, getter, or function result that
+can be recreated in the background isolate, not a value assigned only in
+`main()`. Use the same Firebase initialization options in both entry points.
+Do not call `MeiroSdk.init` in this background callback.
+
+If your app already has a Firebase background callback, call
+`MeiroSdk.handleBackgroundMessage` from it instead of registering another one.
+Non-Meiro messages are ignored. The SDK displays data-only messages, reports
+receipt using the stored user ID and FCM token, and queues failed reports for
+the next foreground sync. Messages with a Firebase notification payload are
+not displayed a second time. Local notification taps are also reported when
+they start the app from a closed state.
+
+The SDK must have been initialized once in the foreground. Tracking disabled
+with `MeiroSdk.setEnabled(false)` remains disabled across restarts and background
+callbacks; it does not disable notification display. Set `pushEnabled: false`
+to disable Meiro push handling. Android Force stop blocks delivery until the
+user manually opens the app again. iOS background delivery depends on the app's
+capabilities and APNs configuration and is not guaranteed.
+
 For custom FCM handling, check messages with:
 
 ```dart
