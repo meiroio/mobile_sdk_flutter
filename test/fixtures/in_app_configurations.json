@@ -1,0 +1,923 @@
+[
+  {
+    "name": "valid story collection",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "inline",
+      "contentHtml": "",
+      "storyCollection": {
+        "groups": [
+          {
+            "id": "22222222-2222-4222-8222-222222222222",
+            "title": "New arrivals",
+            "cover": {
+              "assetId": "33333333-3333-4333-8333-333333333333",
+              "version": 2,
+              "url": "https://pipes.example/public/assets/cover/image?v=2"
+            },
+            "stories": [
+              {
+                "id": "44444444-4444-4444-8444-444444444444",
+                "image": {
+                  "assetId": "55555555-5555-4555-8555-555555555555",
+                  "version": 3,
+                  "url": "https://pipes.example/public/assets/story/image?v=3"
+                },
+                "durationSeconds": 5,
+                "accessibilityLabel": "Blue running shoe",
+                "action": {
+                  "label": "Shop now",
+                  "url": "meiro-example://products/blue-shoe"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "priority": 0,
+      "placement": "home_stories",
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": true
+  },
+  {
+    "name": "story collection rejects modal format",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "",
+      "storyCollection": {
+        "groups": [
+          {
+            "id": "22222222-2222-4222-8222-222222222222",
+            "title": "New arrivals",
+            "cover": {
+              "assetId": "33333333-3333-4333-8333-333333333333",
+              "version": 1,
+              "url": "https://pipes.example/cover"
+            },
+            "stories": [
+              {
+                "id": "44444444-4444-4444-8444-444444444444",
+                "image": {
+                  "assetId": "55555555-5555-4555-8555-555555555555",
+                  "version": 1,
+                  "url": "https://pipes.example/story"
+                },
+                "durationSeconds": 5,
+                "accessibilityLabel": "Blue running shoe"
+              }
+            ]
+          }
+        ]
+      },
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "valid modal",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": true
+  },
+  {
+    "name": "missing cap",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "missing priority",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "missing profile declaration",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "disabled",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": false
+    },
+    "accepted": false
+  },
+  {
+    "name": "bad format",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "other",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "negative priority",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": -1,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "cap zero",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 0,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "bad cap period",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "week"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "event without name",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "event",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "negative delay",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": -1
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "delay too large",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 3601
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "missing delay",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start"
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "inline without placement",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "inline",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "invalid required value",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [
+        42
+      ],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "invalid conditions",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": [],
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": false
+  },
+  {
+    "name": "extra fields",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "futureField": "ignored"
+    },
+    "accepted": true
+  },
+  {
+    "name": "valid inline",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "inline",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": "home_promotion",
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true
+    },
+    "accepted": true
+  },
+  {
+    "name": "survey modal without authored HTML",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "survey": {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "name": "Feedback",
+        "version": 1,
+        "successMessage": "Thanks",
+        "submitButtonText": "Send",
+        "questions": [
+          {
+            "id": "score",
+            "key": "score",
+            "type": "rating",
+            "label": "Score",
+            "helperText": "",
+            "required": true,
+            "min": 0,
+            "max": 10
+          }
+        ]
+      }
+    },
+    "accepted": true
+  },
+  {
+    "name": "valid top sticky",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 30
+      }
+    },
+    "accepted": true
+  },
+  {
+    "name": "valid bottom sticky",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "bottom",
+        "maxHeightPercent": 50
+      }
+    },
+    "accepted": true
+  },
+  {
+    "name": "sticky requires settings",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": null
+    },
+    "accepted": false
+  },
+  {
+    "name": "sticky rejects survey",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": "11111111-1111-4111-8111-111111111111",
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 30
+      },
+      "survey": {
+        "id": "survey"
+      }
+    },
+    "accepted": false
+  },
+  {
+    "name": "sticky rejects placement",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": "home",
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 30
+      }
+    },
+    "accepted": false
+  },
+  {
+    "name": "sticky invalid position",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "middle",
+        "maxHeightPercent": 30
+      }
+    },
+    "accepted": false
+  },
+  {
+    "name": "sticky zero height",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 0
+      }
+    },
+    "accepted": false
+  },
+  {
+    "name": "sticky excessive height",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "sticky",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 101
+      }
+    },
+    "accepted": false
+  },
+  {
+    "name": "modal rejects sticky settings",
+    "message": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "version": 1,
+      "format": "modal",
+      "contentHtml": "<p>Hello</p>",
+      "priority": 0,
+      "placement": null,
+      "trigger": {
+        "type": "session_start",
+        "delaySeconds": 0
+      },
+      "frequencyCap": {
+        "limit": 1,
+        "period": "session"
+      },
+      "conditions": {
+        "mode": "all",
+        "rules": []
+      },
+      "requiredProfileAttributes": [],
+      "usesProfile": false,
+      "isEnabled": true,
+      "surveyId": null,
+      "stickyBanner": {
+        "position": "top",
+        "maxHeightPercent": 30
+      }
+    },
+    "accepted": false
+  }
+]

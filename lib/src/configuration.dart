@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'package:flutter/widgets.dart';
 
 /// Configuration of the Meiro SDK.
 class MeiroConfiguration {
@@ -11,6 +11,8 @@ class MeiroConfiguration {
     this.automaticTrackingOptions = const MeiroAutomaticTrackingOptions(),
     this.language,
     this.firebaseProjectId,
+    this.inAppMessagingEnabled = false,
+    this.navigatorKey,
   });
 
   /// Meiro Data Platform endpoint.
@@ -34,6 +36,12 @@ class MeiroConfiguration {
   /// Firebase project id.
   final String? firebaseProjectId;
 
+  /// Enables Pipes in-app messages. Requires a complete `/collect/<source>` endpoint.
+  final bool inAppMessagingEnabled;
+
+  /// Key supplied to the app Navigator for modal and sticky messages.
+  final GlobalKey<NavigatorState>? navigatorKey;
+
   /// Creates a copy with selected values replaced.
   MeiroConfiguration copyWith({
     Uri? endpoint,
@@ -43,6 +51,8 @@ class MeiroConfiguration {
     MeiroAutomaticTrackingOptions? automaticTrackingOptions,
     String? language,
     String? firebaseProjectId,
+    bool? inAppMessagingEnabled,
+    GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return MeiroConfiguration(
       endpoint: endpoint ?? this.endpoint,
@@ -53,6 +63,9 @@ class MeiroConfiguration {
           automaticTrackingOptions ?? this.automaticTrackingOptions,
       language: language ?? this.language,
       firebaseProjectId: firebaseProjectId ?? this.firebaseProjectId,
+      inAppMessagingEnabled:
+          inAppMessagingEnabled ?? this.inAppMessagingEnabled,
+      navigatorKey: navigatorKey ?? this.navigatorKey,
     );
   }
 }

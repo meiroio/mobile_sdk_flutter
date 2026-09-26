@@ -1,0 +1,239 @@
+[
+  {
+    "name": "empty all",
+    "rule": {
+      "mode": "all",
+      "rules": []
+    },
+    "context": {},
+    "profile": null,
+    "expected": true
+  },
+  {
+    "name": "empty any",
+    "rule": {
+      "mode": "any",
+      "rules": []
+    },
+    "context": {},
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "number equals decimal",
+    "rule": {
+      "field": "event",
+      "key": "value",
+      "operator": "equals",
+      "value": 1.0
+    },
+    "context": {
+      "event": {
+        "value": 1
+      }
+    },
+    "profile": null,
+    "expected": true
+  },
+  {
+    "name": "boolean is not number",
+    "rule": {
+      "field": "event",
+      "key": "value",
+      "operator": "equals",
+      "value": 1
+    },
+    "context": {
+      "event": {
+        "value": true
+      }
+    },
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "string is not number",
+    "rule": {
+      "field": "event",
+      "key": "value",
+      "operator": "equals",
+      "value": 1
+    },
+    "context": {
+      "event": {
+        "value": "1"
+      }
+    },
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "null equals null",
+    "rule": {
+      "field": "event",
+      "key": "value",
+      "operator": "equals",
+      "value": null
+    },
+    "context": {
+      "event": {
+        "value": null
+      }
+    },
+    "profile": null,
+    "expected": true
+  },
+  {
+    "name": "unequal text",
+    "rule": {
+      "field": "event",
+      "key": "value",
+      "operator": "equals",
+      "value": "b"
+    },
+    "context": {
+      "event": {
+        "value": "a"
+      }
+    },
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "missing not equals fails",
+    "rule": {
+      "field": "event",
+      "key": "missing",
+      "operator": "not_equals",
+      "value": 1
+    },
+    "context": {
+      "event": {}
+    },
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "audience lookup failure is not exclusion",
+    "rule": {
+      "field": "audience",
+      "operator": "not_in",
+      "audienceId": "group"
+    },
+    "context": {},
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "audience included",
+    "rule": {
+      "field": "audience",
+      "operator": "in",
+      "audienceId": "group"
+    },
+    "context": {},
+    "profile": {
+      "audiences": [
+        "group"
+      ]
+    },
+    "expected": true
+  },
+  {
+    "name": "audience excluded",
+    "rule": {
+      "field": "audience",
+      "operator": "not_in",
+      "audienceId": "group"
+    },
+    "context": {},
+    "profile": {
+      "audiences": []
+    },
+    "expected": true
+  },
+  {
+    "name": "numeric version order",
+    "rule": {
+      "field": "app_version",
+      "operator": "greater_than",
+      "value": "1.9"
+    },
+    "context": {
+      "app_version": "1.10"
+    },
+    "profile": null,
+    "expected": true
+  },
+  {
+    "name": "nested event array",
+    "rule": {
+      "field": "event",
+      "key": "items.0.total",
+      "operator": "greater_than",
+      "value": 5
+    },
+    "context": {
+      "event": {
+        "items": [
+          {
+            "total": 6
+          }
+        ]
+      }
+    },
+    "profile": null,
+    "expected": true
+  },
+  {
+    "name": "prototype path blocked",
+    "rule": {
+      "field": "event",
+      "key": "constructor.name",
+      "operator": "exists"
+    },
+    "context": {
+      "event": {
+        "constructor": {
+          "name": "unsafe"
+        }
+      }
+    },
+    "profile": null,
+    "expected": false
+  },
+  {
+    "name": "nested all any",
+    "rule": {
+      "mode": "all",
+      "rules": [
+        {
+          "field": "platform",
+          "operator": "equals",
+          "value": "ios"
+        },
+        {
+          "mode": "any",
+          "rules": [
+            {
+              "field": "language",
+              "operator": "starts_with",
+              "value": "en"
+            },
+            {
+              "field": "language",
+              "operator": "equals",
+              "value": "cs"
+            }
+          ]
+        }
+      ]
+    },
+    "context": {
+      "platform": "ios",
+      "language": "en-US"
+    },
+    "profile": null,
+    "expected": true
+  }
+]

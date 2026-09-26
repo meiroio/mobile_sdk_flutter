@@ -163,6 +163,59 @@ if (MeiroNotifications.isMeiroMessage(message)) {
 }
 ```
 
+## In-app Messaging
+
+Use a complete Pipes `/collect/<source>` URL and enable in-app messaging. Give
+the SDK the same navigator key used by your app so it can show modals, sticky
+banners, and full-screen stories:
+
+```dart
+final navigatorKey = GlobalKey<NavigatorState>();
+
+await MeiroSdk.init(configuration: MeiroConfiguration(
+  endpoint: Uri.parse('https://pipes.example.com/collect/mobile'),
+  appId: 'your-app-id',
+  inAppMessagingEnabled: true,
+  navigatorKey: navigatorKey,
+));
+
+MaterialApp(
+  navigatorKey: navigatorKey,
+  navigatorObservers: [MeiroNavigatorObserver()],
+  home: Column(children: [
+    MeiroInAppMessageView(
+      placement: 'home_promotion',
+      messaging: MeiroSdk.inAppMessaging,
+    ),
+    MeiroInAppMessageView(
+      placement: 'home_stories',
+      messaging: MeiroSdk.inAppMessaging,
+    ),
+  ]),
+);
+
+await MeiroSdk.trackCustomEvent({'name': 'show_offer'});
+MeiroSdk.inAppMessaging?.pause();
+MeiroSdk.inAppMessaging?.resume();
+```
+
+Place inline containers before sending their trigger. Report every screen change
+through `MeiroNavigatorObserver` or `MeiroSdk.trackScreenView`. Flutter supports
+v2 HTML, image, survey, sticky, inline, and story messages. It uses the same
+Pipes configuration and frequency policy as the native SDKs; a new display
+requires an online admission check. Apply Mobile SDK source template
+`2026-09-22.1` or later so Pipes accepts in-app and story event types. Set
+`onDiagnostic` on `MeiroSdk.inAppMessaging` to inspect delivery failures while
+testing.
+
+Authored HTML can call `MeiroInApp.close()` to dismiss a message,
+`MeiroInApp.navigate(url)` to open an HTTPS URL or app deep link, and
+`MeiroInApp.getProfile()` to fetch the current profile. Call
+`MeiroInApp.completeAction()` after a sticky banner action succeeds; it closes
+the sticky banner but does not close a modal or inline message. A button with
+`data-mpt-close` also dismisses its message. Clicks and form submissions are
+tracked automatically; they do not by themselves dismiss a message.
+
 ## V1 Audience API
 
 ```dart

@@ -28,7 +28,19 @@ enum MeiroEventType {
   fcmMessageReceived('fcm_message_received'),
 
   /// Firebase message was clicked.
-  fcmMessageClick('fcm_message_click');
+  fcmMessageClick('fcm_message_click'),
+
+  /// In-app message events.
+  inAppMessageImpression('in_app_message_impression'),
+  inAppMessageClick('in_app_message_click'),
+  inAppMessageClose('in_app_message_close'),
+  inAppMessageSubmit('in_app_message_submit'),
+  surveyAnswer('survey_answer'),
+  inAppStoryGroupOpen('in_app_story_group_open'),
+  inAppStoryView('in_app_story_view'),
+  inAppStoryComplete('in_app_story_complete'),
+  inAppStoryClick('in_app_story_click'),
+  inAppStoryClose('in_app_story_close');
 
   const MeiroEventType(this.id);
 
@@ -233,4 +245,3 @@ Map<String, Object?> _withoutNulls(Map<String, Object?> source) {
       if (entry.value != null) entry.key: entry.value,
   };
 }
-

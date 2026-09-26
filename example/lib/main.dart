@@ -3,7 +3,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:meiro_sdk/meiro_sdk.dart';
 
-MeiroConfiguration sdkConfiguration(FirebaseApp app) => MeiroConfiguration(
+final appNavigatorKey = GlobalKey<NavigatorState>();
+
+MeiroConfiguration sdkConfiguration(FirebaseApp? app) => MeiroConfiguration(
       endpoint: Uri.parse(
         const String.fromEnvironment(
           'PIPES_COLLECTION_URL',
@@ -11,9 +13,16 @@ MeiroConfiguration sdkConfiguration(FirebaseApp app) => MeiroConfiguration(
               'https://flutter-sdk-test.dev.pipes.meiro.io/collect/mobile-sdk',
         ),
       ),
-      appId: app.options.appId,
-      firebaseProjectId: app.options.projectId,
+      appId: app?.options.appId ??
+          const String.fromEnvironment('MEIRO_APP_ID',
+              defaultValue: 'io.meiro.meiroSdkExample'),
+      firebaseProjectId: app?.options.projectId,
+      pushNotifications: MeiroPushNotificationsConfiguration(
+        pushEnabled: app != null,
+      ),
       debugMode: true,
+      inAppMessagingEnabled: true,
+      navigatorKey: appNavigatorKey,
     );
 
 @pragma('vm:entry-point')
@@ -27,15 +36,26 @@ Future<void> firebaseBackgroundMessage(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final FirebaseApp firebaseApp = await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundMessage);
-  await FirebaseMessaging.instance.requestPermission();
+  FirebaseApp? firebaseApp;
+  try {
+    firebaseApp = await Firebase.initializeApp();
+  } catch (error) {
+    debugPrint('Firebase is unavailable; push demo disabled: $error');
+  }
+  if (firebaseApp != null) {
+    FirebaseMessaging.onBackgroundMessage(firebaseBackgroundMessage);
+    await FirebaseMessaging.instance.requestPermission();
+  }
 
   await MeiroSdk.init(
     configuration: sdkConfiguration(firebaseApp),
   );
+  MeiroSdk.inAppMessaging?.onDiagnostic =
+      (message) => debugPrint('[MeiroInApp] $message');
 
-  debugPrint('FCM token: ${await FirebaseMessaging.instance.getToken()}');
+  if (firebaseApp != null) {
+    debugPrint('FCM token: ${await FirebaseMessaging.instance.getToken()}');
+  }
 
   await MeiroSdk.trackCustomEvent({'name': 'App opened'});
 
@@ -50,6 +70,7 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       navigatorObservers: [MeiroNavigatorObserver()],
       routes: {
         '/': (_) => const FirstScreen(),
@@ -68,11 +89,37 @@ class FirstScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('First screen')),
-      body: Center(
-        child: FilledButton(
-          onPressed: () => Navigator.of(context).pushNamed('/second'),
-          child: const Text('Go to second screen'),
-        ),
+      body: ListView(
+        children: [
+          MeiroInAppMessageView(
+            placement: 'home_promotion',
+            messaging: MeiroSdk.inAppMessaging,
+          ),
+          MeiroInAppMessageView(
+            placement: 'home_stories',
+            messaging: MeiroSdk.inAppMessaging,
+          ),
+          FilledButton(
+            onPressed: () => MeiroSdk.trackCustomEvent({'name': 'show_offer'}),
+            child: const Text('Trigger in-app offer'),
+          ),
+          FilledButton(
+            onPressed: () => MeiroSdk.trackCustomEvent({'name': 'show_image'}),
+            child: const Text('Trigger in-app image'),
+          ),
+          FilledButton(
+            onPressed: () => MeiroSdk.trackCustomEvent({'name': 'show_survey'}),
+            child: const Text('Trigger in-app survey'),
+          ),
+          FilledButton(
+            onPressed: MeiroSdk.resetIdentity,
+            child: const Text('Reset test identity'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pushNamed('/second'),
+            child: const Text('Go to second screen'),
+          ),
+        ],
       ),
     );
   }
