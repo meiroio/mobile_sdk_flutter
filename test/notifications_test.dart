@@ -103,6 +103,25 @@ void main() {
     expect(local.titles, isEmpty);
   });
 
+  test('one notification tap is reported once across cold-start callbacks',
+      () async {
+    final data = MeiroNotificationData.fromRemoteMessage(message);
+    await notifications.trackClick(data);
+    await notifications.trackClick(data);
+    expect(events, [MeiroEventType.fcmMessageClick]);
+
+    await notifications.trackClick(MeiroNotificationData.fromRemoteMessage(
+      const RemoteMessage(messageId: 'another-firebase-message', data: {
+        'is_meiro_message': 'true',
+        'message_id': 'another-pipes-message',
+      }),
+    ));
+    expect(events, [
+      MeiroEventType.fcmMessageClick,
+      MeiroEventType.fcmMessageClick,
+    ]);
+  });
+
   test('a slow receipt report cannot delay displaying the notification',
       () async {
     final report = Completer<void>();

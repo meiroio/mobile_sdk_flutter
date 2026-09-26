@@ -248,6 +248,7 @@ class MeiroNotifications {
   final Future<void> Function(MeiroEventType, Map<String, Object?>)
       _eventTracker;
   bool _background = false;
+  String? _lastClickedGoogleMessageId;
 
   StreamSubscription<RemoteMessage>? _messageSubscription;
   StreamSubscription<String>? _tokenSubscription;
@@ -343,6 +344,10 @@ class MeiroNotifications {
 
   /// Tracks a notification click and performs the configured action.
   Future<void> trackClick(MeiroNotificationData data) async {
+    if (data.googleMessageId.isNotEmpty) {
+      if (_lastClickedGoogleMessageId == data.googleMessageId) return;
+      _lastClickedGoogleMessageId = data.googleMessageId;
+    }
     await _eventTracker(
       MeiroEventType.fcmMessageClick,
       data.toEventProperties(),
