@@ -236,14 +236,17 @@ class MeiroNotifications {
         _logger = logger,
         _localNotifications =
             localNotifications ?? FlutterLocalNotificationsPlugin(),
-        _firebaseMessaging = firebaseMessaging ?? FirebaseMessaging.instance,
+        _firebaseMessagingOverride = firebaseMessaging,
         _httpClient = httpClient ?? http.Client(),
         _eventTracker = eventTracker ?? MeiroSdk.trackInternal;
 
   final MeiroPushNotificationsConfiguration _configuration;
   final MeiroLogger _logger;
   final FlutterLocalNotificationsPlugin _localNotifications;
-  final FirebaseMessaging _firebaseMessaging;
+  final FirebaseMessaging? _firebaseMessagingOverride;
+  // Resolved lazily so apps without Firebase can init with push disabled.
+  late final FirebaseMessaging _firebaseMessaging =
+      _firebaseMessagingOverride ?? FirebaseMessaging.instance;
   final http.Client _httpClient;
   final Future<void> Function(MeiroEventType, Map<String, Object?>)
       _eventTracker;

@@ -37,7 +37,9 @@ class MeiroPlatformInfo {
       _resolveDeviceInfo(),
       if (includeAdvertisingId &&
           configuration.automaticTrackingOptions.adIdTracking)
-        resolveAdId(),
+        resolveAdId(
+            requestTrackingAuthorization: configuration
+                .automaticTrackingOptions.requestTrackingAuthorization),
     ]);
   }
 
@@ -63,13 +65,14 @@ class MeiroPlatformInfo {
   MeiroDeviceInfo? deviceInfo() => _deviceInfo;
 
   /// Resolves the advertising id once.
-  Future<String?> resolveAdId() async {
+  Future<String?> resolveAdId(
+      {bool requestTrackingAuthorization = false}) async {
     if (_adIdResolved) {
       return _adId;
     }
     _adIdResolved = true;
     try {
-      _adId = await AdvertisingId.id(true);
+      _adId = await AdvertisingId.id(requestTrackingAuthorization);
     } on PlatformException {
       _adId = null;
     }

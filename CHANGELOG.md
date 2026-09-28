@@ -11,9 +11,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Pipes v2 in-app messaging for HTML, images, surveys, sticky banners, inline placements, and stories on Android and iOS.
 - Shared frequency admission, profile targeting, installation caps, and interaction reporting.
+- `MeiroAutomaticTrackingOptions.requestTrackingAuthorization` to opt in to the SDK showing the iOS App Tracking
+  Transparency prompt.
+
+### Changed
+
+- The SDK no longer shows the iOS App Tracking Transparency prompt by default. Apps must request authorization
+  themselves, or enable `requestTrackingAuthorization`, before the IDFA is attached to events. To keep the previous
+  behavior, set `requestTrackingAuthorization: true` and add `NSUserTrackingUsageDescription` to `Info.plist`.
 
 ### Fixed
 
+- iOS apps without `NSUserTrackingUsageDescription` no longer crash during `MeiroSdk.init`.
+- Apps without Firebase configured no longer crash during `MeiroSdk.init` when push is disabled.
 - Avoid duplicate push click reports when a notification opens the app from a closed state.
 
 ## [0.1.0-stage] - 2026-06-02

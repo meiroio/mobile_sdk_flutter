@@ -167,6 +167,16 @@ void main() {
     await handler.dispose();
   });
 
+  test('disabled push does not require a Firebase app', () async {
+    final handler = MeiroNotifications(
+      configuration:
+          const MeiroPushNotificationsConfiguration(pushEnabled: false),
+      logger: const MeiroConsoleLogger(enabled: false),
+    );
+    await handler.init();
+    await handler.dispose();
+  });
+
   test('Android Pipes image_url survives local notification serialization', () {
     final data = MeiroNotificationData.fromMap({
       ...message.data,
