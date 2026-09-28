@@ -65,6 +65,17 @@ void main() {
     expect(
         MeiroInAppMessage.parse({
           ...story,
+          'conditions': {
+            'mode': 'all',
+            'rules': [
+              {'field': 'event', 'key': 42, 'operator': 'exists'}
+            ]
+          }
+        }),
+        isNull);
+    expect(
+        MeiroInAppMessage.parse({
+          ...story,
           'storyCollection': {
             'groups': [
               {

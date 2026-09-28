@@ -104,7 +104,7 @@ class MeiroInAppMessage {
           (cap['limit'] as int) > _maxCapLimit ||
           !['session', 'day', 'lifetime'].contains(cap['period']) ||
           !['all', 'any'].contains(conditions['mode']) ||
-          conditions['rules'] is! List ||
+          !MeiroInAppRules.valid(conditions) ||
           data['usesProfile'] is! bool ||
           required.length > _maxRequiredAttributes ||
           required.any((item) =>
@@ -233,6 +233,35 @@ class MeiroInAppRules {
   static final Object _missing = Object();
   static const int _maxDepth = 5;
   static const int _maxRules = 100;
+
+  static bool valid(Object? rule, [int depth = 0]) {
+    if (rule is! Map || depth > _maxDepth) return false;
+    final mode = rule['mode'];
+    if (mode != null) {
+      final children = rule['rules'];
+      return ['all', 'any'].contains(mode) &&
+          children is List &&
+          children.length <= _maxRules &&
+          children.every((child) => valid(child, depth + 1));
+    }
+    final field = rule['field'];
+    final operator = rule['operator'];
+    if (field is! String || field.isEmpty) return false;
+    if (field == 'audience') {
+      return ['in', 'not_in'].contains(operator) &&
+          rule['audienceId'] is String;
+    }
+    return [
+          'exists',
+          'equals',
+          'not_equals',
+          'contains',
+          'starts_with',
+          'greater_than',
+          'less_than'
+        ].contains(operator) &&
+        (field != 'event' || rule['key'] == null || rule['key'] is String);
+  }
 
   static bool hasAudience(Map<String, Object?> rule, [int depth = 0]) {
     if (depth > _maxDepth) return false;
