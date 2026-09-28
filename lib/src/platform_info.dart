@@ -28,11 +28,18 @@ class MeiroPlatformInfo {
   bool _adIdResolved = false;
 
   /// Warms platform metadata caches.
-  Future<void> warm(MeiroConfiguration configuration) async {
+  Future<void> warm(
+    MeiroConfiguration configuration, {
+    bool includeAdvertisingId = true,
+  }) async {
     await Future.wait([
       _resolvePackageInfo(),
       _resolveDeviceInfo(),
-      if (configuration.automaticTrackingOptions.adIdTracking) resolveAdId(),
+      if (includeAdvertisingId &&
+          configuration.automaticTrackingOptions.adIdTracking)
+        resolveAdId(
+            requestTrackingAuthorization: configuration
+                .automaticTrackingOptions.requestTrackingAuthorization),
     ]);
   }
 
@@ -43,8 +50,8 @@ class MeiroPlatformInfo {
       id: configuration.appId,
       name: packageInfo?.appName,
       version: packageInfo?.version,
-      language:
-          configuration.language ?? PlatformDispatcher.instance.locale.languageCode,
+      language: configuration.language ??
+          PlatformDispatcher.instance.locale.languageCode,
       adId: _adId,
     );
   }
@@ -58,13 +65,14 @@ class MeiroPlatformInfo {
   MeiroDeviceInfo? deviceInfo() => _deviceInfo;
 
   /// Resolves the advertising id once.
-  Future<String?> resolveAdId() async {
+  Future<String?> resolveAdId(
+      {bool requestTrackingAuthorization = false}) async {
     if (_adIdResolved) {
       return _adId;
     }
     _adIdResolved = true;
     try {
-      _adId = await AdvertisingId.id(true);
+      _adId = await AdvertisingId.id(requestTrackingAuthorization);
     } on PlatformException {
       _adId = null;
     }

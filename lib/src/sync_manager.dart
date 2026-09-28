@@ -102,6 +102,9 @@ class MeiroSyncManager {
     final databasePath = await getDatabasesPath();
     return openDatabase(
       p.join(databasePath, 'meiro_events.db'),
+      // Each Flutter engine owns its connection; background cleanup must not
+      // close the foreground SDK's connection to the same durable queue.
+      singleInstance: false,
       version: 1,
       onCreate: (database, version) async {
         await database.execute('''
@@ -118,4 +121,3 @@ class MeiroSyncManager {
   static const _tableName = 'events';
   static const _eventLifetime = Duration(hours: 24);
 }
-

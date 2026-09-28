@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'package:flutter/widgets.dart';
 
 /// Configuration of the Meiro SDK.
 class MeiroConfiguration {
@@ -11,6 +11,8 @@ class MeiroConfiguration {
     this.automaticTrackingOptions = const MeiroAutomaticTrackingOptions(),
     this.language,
     this.firebaseProjectId,
+    this.inAppMessagingEnabled = false,
+    this.navigatorKey,
   });
 
   /// Meiro Data Platform endpoint.
@@ -34,6 +36,12 @@ class MeiroConfiguration {
   /// Firebase project id.
   final String? firebaseProjectId;
 
+  /// Enables Pipes in-app messages. Requires a complete `/collect/<source>` endpoint.
+  final bool inAppMessagingEnabled;
+
+  /// Key supplied to the app Navigator for modal and sticky messages.
+  final GlobalKey<NavigatorState>? navigatorKey;
+
   /// Creates a copy with selected values replaced.
   MeiroConfiguration copyWith({
     Uri? endpoint,
@@ -43,6 +51,8 @@ class MeiroConfiguration {
     MeiroAutomaticTrackingOptions? automaticTrackingOptions,
     String? language,
     String? firebaseProjectId,
+    bool? inAppMessagingEnabled,
+    GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return MeiroConfiguration(
       endpoint: endpoint ?? this.endpoint,
@@ -53,6 +63,9 @@ class MeiroConfiguration {
           automaticTrackingOptions ?? this.automaticTrackingOptions,
       language: language ?? this.language,
       firebaseProjectId: firebaseProjectId ?? this.firebaseProjectId,
+      inAppMessagingEnabled:
+          inAppMessagingEnabled ?? this.inAppMessagingEnabled,
+      navigatorKey: navigatorKey ?? this.navigatorKey,
     );
   }
 }
@@ -64,6 +77,7 @@ class MeiroAutomaticTrackingOptions {
     this.screenViewTracking = true,
     this.lifecycleEventsTracking = true,
     this.adIdTracking = true,
+    this.requestTrackingAuthorization = false,
   });
 
   /// Whether screen views are tracked via [MeiroNavigatorObserver].
@@ -74,6 +88,16 @@ class MeiroAutomaticTrackingOptions {
 
   /// Whether advertising identifiers are resolved and attached to events.
   final bool adIdTracking;
+
+  /// Whether the SDK shows the iOS App Tracking Transparency prompt when
+  /// resolving the advertising identifier.
+  ///
+  /// Requires `NSUserTrackingUsageDescription` in the app's `Info.plist`;
+  /// iOS terminates apps that request authorization without it. When false,
+  /// the IDFA is only returned if the app obtained authorization before
+  /// [MeiroSdk.init]; it is read once per launch.
+  /// Has no effect on Android or when [adIdTracking] is false.
+  final bool requestTrackingAuthorization;
 }
 
 /// Push notifications configuration.

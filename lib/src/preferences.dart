@@ -12,7 +12,28 @@ class MeiroPreferences {
 
   /// Loads SharedPreferences and returns SDK preference storage.
   static Future<MeiroPreferences> create() async {
-    return MeiroPreferences(await SharedPreferences.getInstance());
+    final preferences = await SharedPreferences.getInstance();
+    // Firebase background callbacks run in another isolate with its own cache.
+    await preferences.reload();
+    return MeiroPreferences(preferences);
+  }
+
+  /// Whether the foreground SDK has already established an identity.
+  bool get hasIdentity => _sharedPreferences.containsKey(_userIdKey);
+
+  /// Persists the identity before a background callback can use it.
+  Future<void> ensureIdentity() async {
+    if (!hasIdentity) {
+      await _sharedPreferences.setString(_userIdKey, _uuid.v4());
+    }
+  }
+
+  /// Persisted event tracking consent, shared with background callbacks.
+  bool get enabled => _sharedPreferences.getBool(_enabledKey) ?? true;
+
+  /// Updates event tracking consent.
+  Future<void> setEnabled(bool enabled) async {
+    await _sharedPreferences.setBool(_enabledKey, enabled);
   }
 
   /// Current anonymous user id.
@@ -45,11 +66,12 @@ class MeiroPreferences {
   }
 
   /// Resets anonymous identity.
-  void resetIdentity() {
-    _sharedPreferences.remove(_userIdKey);
+  Future<void> resetIdentity() async {
+    await _sharedPreferences.setString(_userIdKey, _uuid.v4());
   }
 
   static const _userIdKey = 'io.meiro.sdk.user_uuid';
   static const _fcmTokenKey = 'io.meiro.sdk.fcm_token';
   static const _freshInstallKey = 'io.meiro.sdk.fresh_install';
+  static const _enabledKey = 'io.meiro.sdk.enabled';
 }

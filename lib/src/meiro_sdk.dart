@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'audience.dart';
 import 'configuration.dart';
 import 'event.dart';
 import 'events_api.dart';
+import 'in_app_message.dart';
+import 'in_app_messaging.dart';
 import 'notifications.dart';
 import 'platform_info.dart';
 import 'preferences.dart';
@@ -34,6 +38,10 @@ class MeiroSdk {
   /// Audience API client.
   static MeiroAudience get audience => _requireImpl().audience;
 
+  /// In-app message controls when enabled.
+  static MeiroInAppMessaging? get inAppMessaging =>
+      _requireImpl().inAppMessaging;
+
   /// Initializes the SDK. This must be called once, usually before `runApp`.
   static Future<void> init({
     required MeiroConfiguration configuration,
@@ -51,7 +59,8 @@ class MeiroSdk {
   }
 
   /// Enables or disables event tracking.
-  static Future<void> setEnabled(bool enabled) => _requireImpl().setEnabled(enabled);
+  static Future<void> setEnabled(bool enabled) =>
+      _requireImpl().setEnabled(enabled);
 
   /// Tracks a custom event.
   static Future<void> trackCustomEvent(Map<String, Object?> properties) {
@@ -75,11 +84,87 @@ class MeiroSdk {
   }
 
   /// Sets a Firebase Cloud Messaging token.
-  static Future<void> setFcmToken(String token) => _requireImpl().setFcmToken(token);
+  static Future<void> setFcmToken(String token) =>
+      _requireImpl().setFcmToken(token);
 
   /// Displays and tracks a Meiro Firebase message.
   static Future<void> showRemoteMessage(RemoteMessage message) {
     return _requireImpl().showRemoteMessage(message);
+  }
+
+  /// Handles Meiro messages from the app's Firebase background callback.
+  ///
+  /// Initialize Firebase in that callback and pass the same configuration as
+  /// [init]. This does not initialize the foreground SDK, track lifecycle events,
+  /// register Firebase listeners, or replace the application's callback.
+  static Future<void> handleBackgroundMessage(
+    RemoteMessage message, {
+    required MeiroConfiguration configuration,
+    MeiroLogger? logger,
+  }) async {
+    if (!configuration.pushNotifications.pushEnabled ||
+        !MeiroNotifications.isMeiroMessage(message)) {
+      return;
+    }
+    WidgetsFlutterBinding.ensureInitialized();
+    final preferences = await MeiroPreferences.create();
+    if (!preferences.hasIdentity) {
+      return;
+    }
+    final resolvedLogger =
+        logger ?? MeiroConsoleLogger(enabled: configuration.debugMode);
+    final platformInfo = MeiroPlatformInfo();
+    final sessionManager = MeiroSessionManager();
+    final client = http.Client();
+    final api =
+        MeiroEventsApi(endpoint: configuration.endpoint, client: client);
+    final syncManager = MeiroSyncManager(api: api, logger: resolvedLogger);
+    final notifications = MeiroNotifications(
+      configuration: configuration.pushNotifications,
+      logger: resolvedLogger,
+      httpClient: client,
+      eventTracker: (type, properties) async {
+        if (!preferences.enabled) {
+          return;
+        }
+        await platformInfo.warm(configuration, includeAdvertisingId: false);
+        final event = MeiroEvent(
+          type: type,
+          properties: properties,
+          timestamp: DateTime.now(),
+          app: platformInfo.appInfo(configuration),
+          os: platformInfo.osInfo(),
+          device: platformInfo.deviceInfo(),
+          firebase: MeiroFirebaseInfo(
+            projectId: configuration.firebaseProjectId,
+            token: preferences.fcmToken,
+          ),
+          user: MeiroUserInfo(
+            userId: preferences.userId,
+            sessionId: sessionManager.getSessionId(),
+          ),
+        );
+        try {
+          await api.sendEvent(event).timeout(_backgroundRequestTimeout);
+          resolvedLogger.log('Background event ${type.id} sent');
+        } catch (error, stackTrace) {
+          resolvedLogger.log(
+            'Background event ${type.id} send failed; saving offline',
+            error,
+            stackTrace,
+          );
+          await syncManager.savePayload(event.toPayload());
+        }
+      },
+    );
+    try {
+      await notifications.init(background: true);
+      await notifications.show(message);
+    } finally {
+      await notifications.dispose();
+      await syncManager.dispose();
+      client.close();
+    }
   }
 
   /// Internal event tracking used by notification helpers.
@@ -107,6 +192,8 @@ class MeiroSdk {
     }
     return impl;
   }
+
+  static const _backgroundRequestTimeout = Duration(seconds: 5);
 }
 
 class _MeiroSdkImpl with WidgetsBindingObserver {
@@ -122,6 +209,7 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
   late final MeiroSyncManager _syncManager;
   late final MeiroAudience _audience;
   late final MeiroNotifications _notifications;
+  MeiroInAppMessaging? _inAppMessaging;
 
   bool _enabled = true;
   AppLifecycleState? _lastLifecycleState;
@@ -129,9 +217,12 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
   String get userId => _preferences.userId;
   String get sessionId => _sessionManager.getSessionId();
   MeiroAudience get audience => _audience;
+  MeiroInAppMessaging? get inAppMessaging => _inAppMessaging;
 
   Future<void> init() async {
     _preferences = await MeiroPreferences.create();
+    await _preferences.ensureIdentity();
+    _enabled = _preferences.enabled;
     _sessionManager = MeiroSessionManager();
     _platformInfo = MeiroPlatformInfo();
     _api = MeiroEventsApi(endpoint: configuration.endpoint);
@@ -143,28 +234,54 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
     );
 
     await _platformInfo.warm(configuration);
+    if (configuration.inAppMessagingEnabled) {
+      _inAppMessaging = MeiroInAppMessaging(
+        store: MeiroInAppStore(
+          endpoint: configuration.endpoint,
+          preferences: await SharedPreferences.getInstance(),
+          client: http.Client(),
+        ),
+        configuration: configuration,
+        appVersion: _platformInfo.appInfo(configuration).version,
+        userId: () => userId,
+        sessionId: () => sessionId,
+        emit: (type, properties, messageUserId, messageSessionId) =>
+            trackEventInternal(
+                type,
+                properties,
+                MeiroUserInfo(
+                    userId: messageUserId, sessionId: messageSessionId)),
+        logger: logger,
+      );
+      _inAppMessaging!.setEnabled(_enabled);
+    }
     await _syncManager.init();
     await _syncManager.sync();
 
-    if (configuration.automaticTrackingOptions.lifecycleEventsTracking) {
+    if (configuration.automaticTrackingOptions.lifecycleEventsTracking ||
+        configuration.inAppMessagingEnabled) {
       WidgetsBinding.instance.addObserver(this);
-      await _trackAppInstalledIfNecessary();
+      if (configuration.automaticTrackingOptions.lifecycleEventsTracking) {
+        await _trackAppInstalledIfNecessary();
+      }
     }
 
     await _notifications.init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_inAppMessaging != null) unawaited(_inAppMessaging!.start());
+    });
   }
 
   Future<void> dispose() async {
     WidgetsBinding.instance.removeObserver(this);
     await _notifications.dispose();
+    _inAppMessaging?.dispose();
+    _inAppMessaging = null;
     await _syncManager.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!configuration.automaticTrackingOptions.lifecycleEventsTracking) {
-      return;
-    }
     if (_lastLifecycleState == state) {
       return;
     }
@@ -172,28 +289,41 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.resumed:
         _sessionManager.appForegrounded();
-        unawaited(trackEventInternal(MeiroEventType.appForeground));
+        if (configuration.automaticTrackingOptions.lifecycleEventsTracking) {
+          unawaited(trackEventInternal(MeiroEventType.appForeground));
+        }
         unawaited(_syncManager.sync());
+        if (_inAppMessaging != null) unawaited(_inAppMessaging!.foreground());
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         _sessionManager.appBackgrounded();
-        unawaited(trackEventInternal(MeiroEventType.appBackground));
+        _inAppMessaging?.background();
+        if (configuration.automaticTrackingOptions.lifecycleEventsTracking) {
+          unawaited(trackEventInternal(MeiroEventType.appBackground));
+        }
         break;
     }
   }
 
+  @override
+  Future<bool> didPopRoute() async => _inAppMessaging?.dismissOnBack() ?? false;
+
   Future<void> setEnabled(bool enabled) async {
-    final shouldUpdateToken = !_enabled && enabled && _preferences.fcmToken != null;
+    final shouldUpdateToken =
+        !_enabled && enabled && _preferences.fcmToken != null;
     _enabled = enabled;
+    await _preferences.setEnabled(enabled);
+    _inAppMessaging?.setEnabled(enabled);
     if (shouldUpdateToken) {
       await trackEventInternal(MeiroEventType.fcmTokenRegistered);
     }
   }
 
   Future<void> trackCustomEvent(Map<String, Object?> properties) {
+    _inAppMessaging?.trackEvent(properties);
     return trackEventInternal(MeiroEventType.custom, properties);
   }
 
@@ -201,8 +331,9 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
     if (!_enabled) {
       return;
     }
-    _preferences.resetIdentity();
+    await _preferences.resetIdentity();
     _sessionManager.clear();
+    _inAppMessaging?.reset();
   }
 
   Future<void> trackLinkClick(Uri url) {
@@ -216,6 +347,7 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
     String name,
     Map<String, Object?> properties,
   ) {
+    _inAppMessaging?.trackScreen(name);
     return trackEventInternal(
       MeiroEventType.screenView,
       <String, Object?>{...properties, 'name': name},
@@ -239,6 +371,7 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
   Future<void> trackEventInternal(
     MeiroEventType type, [
     Map<String, Object?> properties = const <String, Object?>{},
+    MeiroUserInfo? messageUserInfo,
   ]) async {
     if (!_enabled) {
       return;
@@ -255,14 +388,16 @@ class _MeiroSdkImpl with WidgetsBindingObserver {
         projectId: configuration.firebaseProjectId,
         token: _preferences.fcmToken,
       ),
-      user: MeiroUserInfo(userId: userId, sessionId: sessionId),
+      user: messageUserInfo ??
+          MeiroUserInfo(userId: userId, sessionId: sessionId),
     );
 
     try {
       await _api.sendEvent(event);
       logger.log('Event ${type.id} sent');
     } catch (error, stackTrace) {
-      logger.log('Event ${type.id} send failed; saving offline', error, stackTrace);
+      logger.log(
+          'Event ${type.id} send failed; saving offline', error, stackTrace);
       await _syncManager.savePayload(event.toPayload());
     } finally {
       _sessionManager.eventSent();

@@ -101,7 +101,8 @@ class MeiroNotificationData {
   }) {
     final actionText = data[_actionKey]?.toString();
     final urlText = data[_urlKey]?.toString();
-    final url = urlText == null || urlText.isEmpty ? null : Uri.tryParse(urlText);
+    final url =
+        urlText == null || urlText.isEmpty ? null : Uri.tryParse(urlText);
     final action = switch (actionText) {
       _deeplinkAction when url != null => MeiroNotificationAction.deepLink(url),
       _browserAction when url != null => MeiroNotificationAction.browser(url),
@@ -113,11 +114,12 @@ class MeiroNotificationData {
       googleMessageId: googleMessageId,
       title: data[_titleKey]?.toString() ?? '',
       body: data[_bodyKey]?.toString() ?? '',
-      imageUrl: data[_imageKey]?.toString(),
+      imageUrl: (data[_androidImageKey] ?? data[_imageKey])?.toString(),
       action: action,
       payload: {
         for (final entry in data.entries)
-          if (!_reservedKeys.contains(entry.key)) entry.key: entry.value.toString(),
+          if (!_reservedKeys.contains(entry.key))
+            entry.key: entry.value.toString(),
       },
     );
   }
@@ -178,10 +180,9 @@ class MeiroNotificationData {
 
   /// Creates notification data from JSON.
   static MeiroNotificationData fromJson(Map<String, Object?> json) {
-    final payload = ((json['payload'] as Map?) ?? const {})
-        .map<String, String>(
-          (key, value) => MapEntry(key.toString(), value.toString()),
-        );
+    final payload = ((json['payload'] as Map?) ?? const {}).map<String, String>(
+      (key, value) => MapEntry(key.toString(), value.toString()),
+    );
     return MeiroNotificationData.fromMap(
       <String, dynamic>{
         _messageIdKey: json[_messageIdKey],
@@ -200,6 +201,7 @@ class MeiroNotificationData {
   static const _titleKey = 'title';
   static const _bodyKey = 'body';
   static const _imageKey = 'image';
+  static const _androidImageKey = 'image_url';
   static const _actionKey = 'action';
   static const _urlKey = 'url';
   static const _browserAction = 'browser';
@@ -213,6 +215,7 @@ class MeiroNotificationData {
     _titleKey,
     _bodyKey,
     _imageKey,
+    _androidImageKey,
     _actionKey,
     _urlKey,
     isMeiroMessageKey,
@@ -228,18 +231,27 @@ class MeiroNotifications {
     FlutterLocalNotificationsPlugin? localNotifications,
     FirebaseMessaging? firebaseMessaging,
     http.Client? httpClient,
+    Future<void> Function(MeiroEventType, Map<String, Object?>)? eventTracker,
   })  : _configuration = configuration,
         _logger = logger,
         _localNotifications =
             localNotifications ?? FlutterLocalNotificationsPlugin(),
-        _firebaseMessaging = firebaseMessaging ?? FirebaseMessaging.instance,
-        _httpClient = httpClient ?? http.Client();
+        _firebaseMessagingOverride = firebaseMessaging,
+        _httpClient = httpClient ?? http.Client(),
+        _eventTracker = eventTracker ?? MeiroSdk.trackInternal;
 
   final MeiroPushNotificationsConfiguration _configuration;
   final MeiroLogger _logger;
   final FlutterLocalNotificationsPlugin _localNotifications;
-  final FirebaseMessaging _firebaseMessaging;
+  final FirebaseMessaging? _firebaseMessagingOverride;
+  // Resolved lazily so apps without Firebase can init with push disabled.
+  late final FirebaseMessaging _firebaseMessaging =
+      _firebaseMessagingOverride ?? FirebaseMessaging.instance;
   final http.Client _httpClient;
+  final Future<void> Function(MeiroEventType, Map<String, Object?>)
+      _eventTracker;
+  bool _background = false;
+  String? _lastClickedGoogleMessageId;
 
   StreamSubscription<RemoteMessage>? _messageSubscription;
   StreamSubscription<String>? _tokenSubscription;
@@ -251,27 +263,43 @@ class MeiroNotifications {
   }
 
   /// Initializes Firebase and local notification hooks.
-  Future<void> init() async {
+  Future<void> init({bool background = false}) async {
     if (!_configuration.pushEnabled) {
       return;
     }
 
+    _background = background;
     await _localNotifications.initialize(
       InitializationSettings(
         android: AndroidInitializationSettings(
           _configuration.androidSmallIcon ?? '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinInitializationSettings(),
+        iOS: const DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
       ),
       onDidReceiveNotificationResponse: _handleLocalNotificationResponse,
     );
+
+    if (background) {
+      return;
+    }
+
+    final launch = await _localNotifications.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp ?? false) {
+      await _trackLocalNotificationPayload(
+          launch?.notificationResponse?.payload);
+    }
 
     _messageSubscription = FirebaseMessaging.onMessage.listen((message) {
       if (isMeiroMessage(message)) {
         unawaited(show(message));
       }
     });
-    _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    _openedSubscription =
+        FirebaseMessaging.onMessageOpenedApp.listen((message) {
       if (isMeiroMessage(message)) {
         unawaited(trackClick(MeiroNotificationData.fromRemoteMessage(message)));
       }
@@ -304,11 +332,47 @@ class MeiroNotifications {
       return;
     }
     final data = MeiroNotificationData.fromRemoteMessage(message);
-    await MeiroSdk.trackInternal(
-      MeiroEventType.fcmMessageReceived,
+    try {
+      // FCM/APNs already displays notification payloads in the background.
+      if (!_background || message.notification == null) {
+        await _display(data);
+      }
+    } finally {
+      await _eventTracker(
+        MeiroEventType.fcmMessageReceived,
+        data.toEventProperties(),
+      );
+    }
+  }
+
+  /// Tracks a notification click and performs the configured action.
+  Future<void> trackClick(MeiroNotificationData data) async {
+    if (data.googleMessageId.isNotEmpty) {
+      if (_lastClickedGoogleMessageId == data.googleMessageId) return;
+      _lastClickedGoogleMessageId = data.googleMessageId;
+    }
+    await _eventTracker(
+      MeiroEventType.fcmMessageClick,
       data.toEventProperties(),
     );
 
+    final url = data.action.url;
+    if (url == null) {
+      return;
+    }
+    try {
+      await launchUrl(
+        url,
+        mode: data.action is MeiroNotificationBrowserAction
+            ? LaunchMode.externalApplication
+            : LaunchMode.platformDefault,
+      );
+    } catch (error, stackTrace) {
+      _logger.log('Failed to open push notification action', error, stackTrace);
+    }
+  }
+
+  Future<void> _display(MeiroNotificationData data) async {
     final imagePath = await _downloadImage(data.imageUrl);
     await _localNotifications.show(
       data.id.hashCode,
@@ -340,37 +404,17 @@ class MeiroNotifications {
     );
   }
 
-  /// Tracks a notification click and performs the configured action.
-  Future<void> trackClick(MeiroNotificationData data) async {
-    await MeiroSdk.trackInternal(
-      MeiroEventType.fcmMessageClick,
-      data.toEventProperties(),
-    );
-
-    final url = data.action.url;
-    if (url == null) {
-      return;
-    }
-    try {
-      await launchUrl(
-        url,
-        mode: data.action is MeiroNotificationBrowserAction
-            ? LaunchMode.externalApplication
-            : LaunchMode.platformDefault,
-      );
-    } catch (error, stackTrace) {
-      _logger.log('Failed to open push notification action', error, stackTrace);
-    }
+  void _handleLocalNotificationResponse(NotificationResponse response) {
+    unawaited(_trackLocalNotificationPayload(response.payload));
   }
 
-  void _handleLocalNotificationResponse(NotificationResponse response) {
-    final payload = response.payload;
+  Future<void> _trackLocalNotificationPayload(String? payload) async {
     if (payload == null) {
       return;
     }
     try {
       final decoded = (jsonDecode(payload) as Map).cast<String, Object?>();
-      unawaited(trackClick(MeiroNotificationData.fromJson(decoded)));
+      await trackClick(MeiroNotificationData.fromJson(decoded));
     } catch (error, stackTrace) {
       _logger.log('Failed to process notification click', error, stackTrace);
     }
@@ -382,14 +426,17 @@ class MeiroNotifications {
     }
     try {
       final uri = Uri.parse(imageUrl);
-      final response = await _httpClient.get(uri);
+      final response =
+          await _httpClient.get(uri).timeout(_imageDownloadTimeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return null;
       }
       final directory = await getTemporaryDirectory();
-      final extension = p.extension(uri.path).isEmpty ? '.jpg' : p.extension(uri.path);
+      final extension =
+          p.extension(uri.path).isEmpty ? '.jpg' : p.extension(uri.path);
       final file = File(
-        p.join(directory.path, 'meiro_push_${DateTime.now().microsecondsSinceEpoch}$extension'),
+        p.join(directory.path,
+            'meiro_push_${DateTime.now().microsecondsSinceEpoch}$extension'),
       );
       await file.writeAsBytes(response.bodyBytes);
       return file.path;
@@ -398,4 +445,6 @@ class MeiroNotifications {
       return null;
     }
   }
+
+  static const _imageDownloadTimeout = Duration(seconds: 5);
 }

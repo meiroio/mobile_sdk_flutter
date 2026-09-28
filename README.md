@@ -54,6 +54,7 @@ MeiroConfiguration(
     screenViewTracking: true,
     lifecycleEventsTracking: true,
     adIdTracking: true,
+    requestTrackingAuthorization: false,
   ),
   pushNotifications: const MeiroPushNotificationsConfiguration(
     pushEnabled: true,
@@ -115,6 +116,46 @@ When `pushEnabled` is true:
 
 The SDK does not request notification permissions. Your app must request permissions on Android 13+ and iOS.
 
+### Background and closed-app notifications
+
+Register a Firebase background callback before `runApp`. Initialize Firebase
+there and pass the same Meiro configuration used by your foreground app:
+
+```dart
+@pragma('vm:entry-point')
+Future<void> firebaseBackgroundMessage(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  await MeiroSdk.handleBackgroundMessage(
+    message,
+    configuration: meiroConfiguration,
+  );
+}
+
+// In main(), after Firebase.initializeApp() and before runApp():
+FirebaseMessaging.onBackgroundMessage(firebaseBackgroundMessage);
+```
+
+Import `firebase_core` and `firebase_messaging` in the app. Define
+`meiroConfiguration` as a top-level constant, getter, or function result that
+can be recreated in the background isolate, not a value assigned only in
+`main()`. Use the same Firebase initialization options in both entry points.
+Do not call `MeiroSdk.init` in this background callback.
+
+If your app already has a Firebase background callback, call
+`MeiroSdk.handleBackgroundMessage` from it instead of registering another one.
+Non-Meiro messages are ignored. The SDK displays data-only messages, reports
+receipt using the stored user ID and FCM token, and queues failed reports for
+the next foreground sync. Messages with a Firebase notification payload are
+not displayed a second time. Local notification taps are also reported when
+they start the app from a closed state.
+
+The SDK must have been initialized once in the foreground. Tracking disabled
+with `MeiroSdk.setEnabled(false)` remains disabled across restarts and background
+callbacks; it does not disable notification display. Set `pushEnabled: false`
+to disable Meiro push handling. Android Force stop blocks delivery until the
+user manually opens the app again. iOS background delivery depends on the app's
+capabilities and APNs configuration and is not guaranteed.
+
 For custom FCM handling, check messages with:
 
 ```dart
@@ -122,6 +163,59 @@ if (MeiroNotifications.isMeiroMessage(message)) {
   await MeiroSdk.showRemoteMessage(message);
 }
 ```
+
+## In-app Messaging
+
+Use a complete Pipes `/collect/<source>` URL and enable in-app messaging. Give
+the SDK the same navigator key used by your app so it can show modals, sticky
+banners, and full-screen stories:
+
+```dart
+final navigatorKey = GlobalKey<NavigatorState>();
+
+await MeiroSdk.init(configuration: MeiroConfiguration(
+  endpoint: Uri.parse('https://pipes.example.com/collect/mobile'),
+  appId: 'your-app-id',
+  inAppMessagingEnabled: true,
+  navigatorKey: navigatorKey,
+));
+
+MaterialApp(
+  navigatorKey: navigatorKey,
+  navigatorObservers: [MeiroNavigatorObserver()],
+  home: Column(children: [
+    MeiroInAppMessageView(
+      placement: 'home_promotion',
+      messaging: MeiroSdk.inAppMessaging,
+    ),
+    MeiroInAppMessageView(
+      placement: 'home_stories',
+      messaging: MeiroSdk.inAppMessaging,
+    ),
+  ]),
+);
+
+await MeiroSdk.trackCustomEvent({'name': 'show_offer'});
+MeiroSdk.inAppMessaging?.pause();
+MeiroSdk.inAppMessaging?.resume();
+```
+
+Place inline containers before sending their trigger. Report every screen change
+through `MeiroNavigatorObserver` or `MeiroSdk.trackScreenView`. Flutter supports
+v2 HTML, image, survey, sticky, inline, and story messages. It uses the same
+Pipes configuration and frequency policy as the native SDKs; a new display
+requires an online admission check. Apply Mobile SDK source template
+`2026-09-22.1` or later so Pipes accepts in-app and story event types. Set
+`onDiagnostic` on `MeiroSdk.inAppMessaging` to inspect delivery failures while
+testing.
+
+Authored HTML can call `MeiroInApp.close()` to dismiss a message,
+`MeiroInApp.navigate(url)` to open an HTTPS URL or app deep link, and
+`MeiroInApp.getProfile()` to fetch the current profile. Call
+`MeiroInApp.completeAction()` after a sticky banner action succeeds; it closes
+the sticky banner but does not close a modal or inline message. A button with
+`data-mpt-close` also dismisses its message. Clicks and form submissions are
+tracked automatically; they do not by themselves dismiss a message.
 
 ## V1 Audience API
 
@@ -175,7 +269,30 @@ When `adIdTracking` is enabled, the SDK attempts to resolve the advertising ID u
 Apps are responsible for platform policy and permission requirements:
 
 - Android apps using advertising ID must satisfy Google Play AD_ID declaration requirements.
-- iOS apps must handle App Tracking Transparency before IDFA can be returned.
+- iOS apps must obtain App Tracking Transparency authorization before the IDFA can be returned.
+
+By default the SDK never shows the iOS tracking prompt. Request authorization
+in your app, for example with the `app_tracking_transparency` package, before
+calling `MeiroSdk.init`. The SDK reads the IDFA once per launch, so
+authorization granted after `init` takes effect from the next app launch.
+
+To let the SDK show the prompt during `MeiroSdk.init` instead, enable
+`requestTrackingAuthorization` and add a usage description to `ios/Runner/Info.plist`:
+
+```dart
+automaticTrackingOptions: const MeiroAutomaticTrackingOptions(
+  adIdTracking: true,
+  requestTrackingAuthorization: true,
+),
+```
+
+```xml
+<key>NSUserTrackingUsageDescription</key>
+<string>Explain why your app uses the advertising identifier.</string>
+```
+
+iOS terminates apps that request tracking authorization without
+`NSUserTrackingUsageDescription`. The option has no effect on Android.
 
 ## Development
 
