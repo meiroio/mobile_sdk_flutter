@@ -23,7 +23,7 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('advertising ID resolution requests tracking only when opted in',
+  test('advertising ID resolution requests tracking unless opted out',
       () async {
     final configuration = MeiroConfiguration(
       endpoint: Uri.parse('https://example.com/collect'),
@@ -32,10 +32,10 @@ void main() {
     await MeiroPlatformInfo().warm(configuration);
     await MeiroPlatformInfo().warm(configuration.copyWith(
       automaticTrackingOptions: const MeiroAutomaticTrackingOptions(
-        requestTrackingAuthorization: true,
+        requestTrackingAuthorization: false,
       ),
     ));
 
-    expect(requests, [false, true]);
+    expect(requests, [true, false]);
   });
 }

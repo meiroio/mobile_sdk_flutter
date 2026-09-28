@@ -17,6 +17,20 @@ dependencies:
 
 The repository is currently private and `publish_to` is disabled.
 
+### iOS setup
+
+By default the SDK shows the iOS App Tracking Transparency prompt to resolve the
+advertising ID. Adding a usage description to `ios/Runner/Info.plist` is
+**mandatory**; iOS terminates the app during `MeiroSdk.init` without it:
+
+```xml
+<key>NSUserTrackingUsageDescription</key>
+<string>Explain why your app uses the advertising identifier.</string>
+```
+
+Apple reviews this text and users see it in the prompt. If you do not want the
+SDK to show the prompt, see [Advertising ID](#advertising-id).
+
 ## Getting Started
 
 Initialize the SDK before `runApp`:
@@ -54,7 +68,7 @@ MeiroConfiguration(
     screenViewTracking: true,
     lifecycleEventsTracking: true,
     adIdTracking: true,
-    requestTrackingAuthorization: false,
+    requestTrackingAuthorization: true,
   ),
   pushNotifications: const MeiroPushNotificationsConfiguration(
     pushEnabled: true,
@@ -271,28 +285,27 @@ Apps are responsible for platform policy and permission requirements:
 - Android apps using advertising ID must satisfy Google Play AD_ID declaration requirements.
 - iOS apps must obtain App Tracking Transparency authorization before the IDFA can be returned.
 
-By default the SDK never shows the iOS tracking prompt. Request authorization
-in your app, for example with the `app_tracking_transparency` package, before
-calling `MeiroSdk.init`. The SDK reads the IDFA once per launch, so
-authorization granted after `init` takes effect from the next app launch.
+By default the SDK shows the iOS tracking prompt during `MeiroSdk.init`, which
+requires `NSUserTrackingUsageDescription` in `ios/Runner/Info.plist` (see
+[iOS setup](#ios-setup)). iOS terminates apps that request tracking
+authorization without it.
 
-To let the SDK show the prompt during `MeiroSdk.init` instead, enable
-`requestTrackingAuthorization` and add a usage description to `ios/Runner/Info.plist`:
+To show the prompt yourself instead, for example with the
+`app_tracking_transparency` package at a moment that suits your onboarding,
+disable `requestTrackingAuthorization`:
 
 ```dart
 automaticTrackingOptions: const MeiroAutomaticTrackingOptions(
   adIdTracking: true,
-  requestTrackingAuthorization: true,
+  requestTrackingAuthorization: false,
 ),
 ```
 
-```xml
-<key>NSUserTrackingUsageDescription</key>
-<string>Explain why your app uses the advertising identifier.</string>
-```
-
-iOS terminates apps that request tracking authorization without
-`NSUserTrackingUsageDescription`. The option has no effect on Android.
+The SDK then only reads the IDFA if the app obtained authorization before
+`MeiroSdk.init`. It reads the IDFA once per launch, so authorization granted
+after `init` takes effect from the next app launch. Apps that never use the
+advertising ID can set `adIdTracking: false` and omit the usage description.
+The option has no effect on Android.
 
 ## Development
 

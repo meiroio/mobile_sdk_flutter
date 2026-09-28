@@ -77,7 +77,7 @@ class MeiroAutomaticTrackingOptions {
     this.screenViewTracking = true,
     this.lifecycleEventsTracking = true,
     this.adIdTracking = true,
-    this.requestTrackingAuthorization = false,
+    this.requestTrackingAuthorization = true,
   });
 
   /// Whether screen views are tracked via [MeiroNavigatorObserver].
@@ -92,10 +92,10 @@ class MeiroAutomaticTrackingOptions {
   /// Whether the SDK shows the iOS App Tracking Transparency prompt when
   /// resolving the advertising identifier.
   ///
-  /// Requires `NSUserTrackingUsageDescription` in the app's `Info.plist`;
-  /// iOS terminates apps that request authorization without it. When false,
-  /// the IDFA is only returned if the app obtained authorization before
-  /// [MeiroSdk.init]; it is read once per launch.
+  /// When true, `NSUserTrackingUsageDescription` is mandatory in the app's
+  /// `Info.plist`; iOS terminates apps that request authorization without it.
+  /// When false, the IDFA is only returned if the app obtained authorization
+  /// before [MeiroSdk.init]; it is read once per launch.
   /// Has no effect on Android or when [adIdTracking] is false.
   final bool requestTrackingAuthorization;
 }

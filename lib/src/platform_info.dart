@@ -66,7 +66,7 @@ class MeiroPlatformInfo {
 
   /// Resolves the advertising id once.
   Future<String?> resolveAdId(
-      {bool requestTrackingAuthorization = false}) async {
+      {bool requestTrackingAuthorization = true}) async {
     if (_adIdResolved) {
       return _adId;
     }
