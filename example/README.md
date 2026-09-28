@@ -3,6 +3,12 @@
 The app can run without Firebase; push handling is disabled when Firebase has no
 platform configuration. To test push, place your Android Firebase
 `google-services.json` at `android/app/google-services.json` before building.
+The iOS host runs in a simulator without Firebase or an ATT usage description;
+push is disabled and no tracking prompt appears in that setup. To try it, run
+`flutter run -d <ios-simulator-id>` from `example`.
+For a manual in-app walkthrough on iOS, run
+`flutter test integration_test/in_app_ios_test.dart -d <ios-simulator-id>`.
+It uses the live endpoint and prints `SHOT:` markers for screenshots.
 The default in-app endpoint is the Flutter SDK test instance's `mobile-sdk` source:
 
 ```sh
