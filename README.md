@@ -223,6 +223,9 @@ requires an online admission check. Apply Mobile SDK source template
 `onDiagnostic` on `MeiroSdk.inAppMessaging` to inspect delivery failures while
 testing.
 
+Messages with **Native** content use Flutter widgets and no WebView. They need no
+extra setup.
+
 Authored HTML can call `MeiroInApp.close()` to dismiss a message,
 `MeiroInApp.navigate(url)` to open an HTTPS URL or app deep link, and
 `MeiroInApp.getProfile()` to fetch the current profile. Call

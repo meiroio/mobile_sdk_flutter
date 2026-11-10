@@ -15,6 +15,7 @@ import 'configuration.dart';
 import 'event.dart';
 import 'in_app_message.dart';
 import 'in_app_message_view.dart';
+import 'in_app_native_content.dart';
 
 /// One prepared delivery, including its captured identity and display ID.
 class MeiroInAppDisplay {
@@ -445,6 +446,10 @@ class MeiroInAppMessaging {
         MediaQuery.sizeOf(_configuration.navigatorKey!.currentContext!);
     final sticky = display.message.format == 'sticky';
     final player = display.storyMode == 'player';
+    final native = display.message.nativeContent;
+    final card = native == null
+        ? Colors.white
+        : inAppNativeColor(native['backgroundColor'] as String);
     // Sticky banners float as a card, matching the native SDKs.
     final margin = sticky ? 10.0 : 0.0;
     final maxHeight = sticky
@@ -483,7 +488,7 @@ class MeiroInAppMessaging {
                         child: Opacity(
                           opacity: visible ? 1 : 0,
                           child: Material(
-                            color: player ? Colors.black : Colors.white,
+                            color: player ? Colors.black : card,
                             elevation: sticky ? 6 : 0,
                             borderRadius:
                                 player ? null : BorderRadius.circular(12),
@@ -491,7 +496,9 @@ class MeiroInAppMessaging {
                             child: SizedBox(
                                 width: sticky
                                     ? screen.width - 2 * margin
-                                    : screen.width * (player ? 1 : 0.9),
+                                    : native != null
+                                        ? min(450, screen.width - 40)
+                                        : screen.width * (player ? 1 : 0.9),
                                 height: player
                                     ? screen.height
                                     : min(display.height.value + 48, maxHeight),
@@ -503,6 +510,12 @@ class MeiroInAppMessaging {
                                             alignment: Alignment.centerRight,
                                             child: IconButton(
                                                 tooltip: 'Close message',
+                                                color: ThemeData
+                                                            .estimateBrightnessForColor(
+                                                                card) ==
+                                                        Brightness.dark
+                                                    ? Colors.white
+                                                    : const Color(0xFF111827),
                                                 icon: const Icon(Icons.close),
                                                 onPressed: () => _close(
                                                     display, 'close_button')))),
@@ -662,17 +675,10 @@ class MeiroInAppMessaging {
     if (raw is! String || raw.length > _maxNavigationUrlLength) return;
     final url = Uri.tryParse(raw);
     final scheme = url?.scheme.toLowerCase();
-    const blocked = {
-      'http',
-      'javascript',
-      'data',
-      'file',
-      'about',
-      'vbscript',
-      'blob'
-    };
     final allowed = (scheme == 'https' && url?.host.isNotEmpty == true) ||
-        (scheme != null && scheme.isNotEmpty && !blocked.contains(scheme));
+        (scheme != null &&
+            scheme.isNotEmpty &&
+            !MeiroInAppMessage.blockedUrlSchemes.contains(scheme));
     if (!allowed || url == null) {
       _diagnostic('Blocked navigation URL');
       return;

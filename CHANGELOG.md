@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - Pipes v2 in-app messaging for HTML, images, surveys, sticky banners, inline placements, and stories on Android and iOS.
+- Native in-app content: image, text, button, and spacer blocks drawn with Flutter widgets and no WebView, in modal, sticky,
+  and inline formats.
 - Shared frequency admission, profile targeting, installation caps, and interaction reporting.
 - `MeiroAutomaticTrackingOptions.requestTrackingAuthorization` (default `true`). Set it to `false` to show the iOS App
   Tracking Transparency prompt from your app instead of during `MeiroSdk.init`.

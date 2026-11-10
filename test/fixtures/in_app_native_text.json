@@ -1,0 +1,676 @@
+[
+  {
+    "name": "literal text",
+    "text": "Get 20% off",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Get 20% off"
+  },
+  {
+    "name": "dot path",
+    "text": "Hello {{ attributes.customer_details[0].first_name[0] }}!",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Hello Alex!"
+  },
+  {
+    "name": "quoted path from Insert",
+    "text": "{{ attributes[\"customer_details\"][0][\"first_name\"][0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Alex"
+  },
+  {
+    "name": "single quoted path",
+    "text": "{{ attributes['customer_details'][0]['first_name'][0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Alex"
+  },
+  {
+    "name": "profile root",
+    "text": "{{ profile.attributes.customer_details[0].first_name[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Alex"
+  },
+  {
+    "name": "default on missing value",
+    "text": "Hello {{ attributes.customer_details[0].nickname[0] | default: 'there' }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Hello there"
+  },
+  {
+    "name": "default on empty array item",
+    "text": "{{ attributes.customer_details[0].last_name | default: \"none\" }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "none"
+  },
+  {
+    "name": "default on false",
+    "text": "{{ attributes.customer_details[0].vip[0] | default: 'no' }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "no"
+  },
+  {
+    "name": "missing value without default",
+    "text": "[{{ attributes.nope[0].x[0] }}]",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "[]"
+  },
+  {
+    "name": "false without default",
+    "text": "{{ attributes.customer_details[0].vip[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "false"
+  },
+  {
+    "name": "true value",
+    "text": "{{ attributes.customer_details[0].member[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "true"
+  },
+  {
+    "name": "decimal number",
+    "text": "{{ attributes.customer_details[0].age[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "34.5"
+  },
+  {
+    "name": "whole number",
+    "text": "{{ attributes.customer_details[0].count[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "3"
+  },
+  {
+    "name": "array output joins values",
+    "text": "{{ attributes.customer_details[0].tags }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "ab"
+  },
+  {
+    "name": "html is literal",
+    "text": "<b>{{ attributes.customer_details[0].first_name[0] }}</b>",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "<b>Alex</b>"
+  },
+  {
+    "name": "two outputs",
+    "text": "{{ attributes.customer_details[0].first_name[0] }} {{ attributes.customer_details[0].count[0] }}",
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Alex 3"
+  },
+  {
+    "name": "required attribute present",
+    "text": "Hi",
+    "required": [
+      "customer_details"
+    ],
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Hi"
+  },
+  {
+    "name": "required attribute prefix",
+    "text": "Hi",
+    "required": [
+      "attributes.customer_details"
+    ],
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": "Hi"
+  },
+  {
+    "name": "required attribute missing",
+    "text": "Hi",
+    "required": [
+      "other"
+    ],
+    "profile": {
+      "attributes": {
+        "customer_details": [
+          {
+            "first_name": [
+              "Alex"
+            ],
+            "last_name": [],
+            "age": [
+              34.5
+            ],
+            "count": [
+              3.0
+            ],
+            "vip": [
+              false
+            ],
+            "member": [
+              true
+            ],
+            "tags": [
+              "a",
+              "b"
+            ]
+          }
+        ]
+      },
+      "audiences": []
+    },
+    "expected": null
+  },
+  {
+    "name": "required attribute empty",
+    "text": "Hi",
+    "required": [
+      "empty"
+    ],
+    "profile": {
+      "attributes": {
+        "empty": [
+          {
+            "name": [
+              "  "
+            ]
+          }
+        ]
+      }
+    },
+    "expected": null
+  }
+]

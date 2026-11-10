@@ -20,7 +20,23 @@ class MeiroInAppMessage {
   static const int _maxStories = 100;
   static const int _maxStoryDurationSeconds = 30;
   static const int _maxStoryActionUrlLength = 2048;
+  static const int _maxNativeBlocks = 20;
 
+  /// URL schemes that a message must never open.
+  static const Set<String> blockedUrlSchemes = {
+    'http',
+    'javascript',
+    'data',
+    'file',
+    'content',
+    'about',
+    'vbscript',
+    'blob',
+    'intent',
+  };
+
+  static final RegExp _nativeColor =
+      RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$');
   static final RegExp _uuid = RegExp(
       r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
@@ -44,6 +60,8 @@ class MeiroInAppMessage {
       (data['survey'] as Map?)?.cast<String, Object?>();
   Map<String, Object?>? get storyCollection =>
       (data['storyCollection'] as Map?)?.cast<String, Object?>();
+  Map<String, Object?>? get nativeContent =>
+      (data['nativeContent'] as Map?)?.cast<String, Object?>();
   List<String> get requiredProfileAttributes =>
       (data['requiredProfileAttributes'] as List).cast<String>();
   bool get needsProfile =>
@@ -68,6 +86,7 @@ class MeiroInAppMessage {
       final placement = data['placement'];
       final survey = data['survey'];
       final stories = data['storyCollection'];
+      final native = data['nativeContent'];
       final sticky = data['stickyBanner'];
       final delay = trigger['delaySeconds'];
       if (data['isEnabled'] != true ||
@@ -81,7 +100,15 @@ class MeiroInAppMessage {
           priority is! int ||
           priority < 0 ||
           priority > _maxPriority ||
-          (html.isEmpty && survey == null && stories == null) ||
+          (html.isEmpty &&
+              survey == null &&
+              stories == null &&
+              native == null) ||
+          (native != null &&
+              (html.isNotEmpty ||
+                  survey != null ||
+                  stories != null ||
+                  !_validNative(native))) ||
           (format == 'inline' &&
               (placement is! String ||
                   !RegExp(r'^[A-Za-z][A-Za-z0-9_]{0,99}$')
@@ -187,23 +214,7 @@ class MeiroInAppMessage {
               action['label'] is! String ||
               (action['label'] as String).isEmpty ||
               (action['label'] as String).length > 100 ||
-              action['url'] is! String ||
-              (action['url'] as String).length > _maxStoryActionUrlLength) {
-            return false;
-          }
-          final url = Uri.tryParse(action['url'] as String);
-          if (url == null ||
-              url.scheme.isEmpty ||
-              const {
-                'http',
-                'javascript',
-                'data',
-                'file',
-                'about',
-                'vbscript',
-                'blob'
-              }.contains(url.scheme) ||
-              (url.scheme == 'https' && url.host.isEmpty)) {
+              !_validAppUrl(action['url'])) {
             return false;
           }
         }
@@ -211,6 +222,76 @@ class MeiroInAppMessage {
     }
     return storyCount <= _maxStories;
   }
+
+  static bool _validAppUrl(Object? value) {
+    if (value is! String || value.length > _maxStoryActionUrlLength) {
+      return false;
+    }
+    final url = Uri.tryParse(value);
+    return url != null &&
+        url.scheme.isNotEmpty &&
+        !blockedUrlSchemes.contains(url.scheme) &&
+        (url.scheme != 'https' || url.host.isNotEmpty);
+  }
+
+  static bool _validNative(Object? value) {
+    if (value is! Map ||
+        !_validNativeColor(value['backgroundColor']) ||
+        value['blocks'] is! List) {
+      return false;
+    }
+    final blocks = value['blocks'] as List;
+    return blocks.isNotEmpty &&
+        blocks.length <= _maxNativeBlocks &&
+        blocks.every(_validNativeBlock);
+  }
+
+  static bool _validNativeBlock(Object? block) {
+    if (block is! Map || !_validId(block['id'])) return false;
+    switch (block['type']) {
+      case 'image':
+        return _validAsset(block['image']) &&
+            _validText(block['accessibilityLabel'], 300);
+      case 'text':
+        return ['title', 'body'].contains(block['style']) &&
+            _validText(block['text'], 1000) &&
+            _validNativeColor(block['color']);
+      case 'buttons':
+        final buttons = block['buttons'];
+        return buttons is List &&
+            buttons.isNotEmpty &&
+            buttons.length <= 2 &&
+            buttons.every(_validNativeButton);
+      case 'spacer':
+        final height = block['height'];
+        return height is int && height >= 4 && height <= 64;
+      default:
+        return false;
+    }
+  }
+
+  static bool _validNativeButton(Object? button) {
+    if (button is! Map ||
+        !_validId(button['id']) ||
+        !_validText(button['label'], 300) ||
+        !_validNativeColor(button['backgroundColor']) ||
+        !_validNativeColor(button['color'])) {
+      return false;
+    }
+    final action = button['action'];
+    return action is Map &&
+        (action['type'] == 'close' ||
+            (action['type'] == 'url' && _validAppUrl(action['url'])));
+  }
+
+  static bool _validId(Object? value) =>
+      value is String && _uuid.hasMatch(value);
+
+  static bool _validText(Object? value, int maxLength) =>
+      value is String && value.isNotEmpty && value.length <= maxLength;
+
+  static bool _validNativeColor(Object? value) =>
+      value is String && _nativeColor.hasMatch(value);
 
   static bool _validAsset(Object? value) {
     if (value is! Map ||

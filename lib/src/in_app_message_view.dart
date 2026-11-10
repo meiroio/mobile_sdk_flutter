@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'in_app_messaging.dart';
+import 'in_app_native_content.dart';
 
 /// A named container for an inline in-app message or story rail.
 class MeiroInAppMessageView extends StatefulWidget {
@@ -89,10 +90,13 @@ class MeiroInAppMessageViewState extends State<MeiroInAppMessageView> {
         width: double.infinity,
         child: ValueListenableBuilder<bool>(
           valueListenable: current.visible,
-          builder: (context, visible, _) => Opacity(
-            opacity: visible ? 1 : 0,
-            child: MeiroInAppContent(
-                key: ValueKey(current.identity), display: current),
+          builder: (context, visible, _) => IgnorePointer(
+            ignoring: !visible,
+            child: Opacity(
+              opacity: visible ? 1 : 0,
+              child: MeiroInAppContent(
+                  key: ValueKey(current.identity), display: current),
+            ),
           ),
         ),
       ),
@@ -100,17 +104,28 @@ class MeiroInAppMessageViewState extends State<MeiroInAppMessageView> {
   }
 }
 
-/// Web content bridge shared by modal, sticky, inline, and story player views.
-class MeiroInAppContent extends StatefulWidget {
+/// Message content shared by modal, sticky, inline, and story player views.
+class MeiroInAppContent extends StatelessWidget {
   const MeiroInAppContent({required this.display, super.key});
 
   final MeiroInAppDisplay display;
 
   @override
-  State<MeiroInAppContent> createState() => _MeiroInAppContentState();
+  Widget build(BuildContext context) => display.message.nativeContent == null
+      ? _MeiroInAppWebContent(display: display)
+      : MeiroInAppNativeContent(display: display);
 }
 
-class _MeiroInAppContentState extends State<MeiroInAppContent> {
+class _MeiroInAppWebContent extends StatefulWidget {
+  const _MeiroInAppWebContent({required this.display});
+
+  final MeiroInAppDisplay display;
+
+  @override
+  State<_MeiroInAppWebContent> createState() => _MeiroInAppWebContentState();
+}
+
+class _MeiroInAppWebContentState extends State<_MeiroInAppWebContent> {
   static const int _maxBridgeMessageLength = 262144;
 
   late final WebViewController controller;
